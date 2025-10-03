@@ -15,7 +15,7 @@ import { LogOut, User, Shield } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const getInitials = (name: string) => {
     return name
@@ -30,43 +30,40 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/">
-              <a
-                className="text-xl font-semibold text-foreground hover-elevate active-elevate-2 px-3 py-2 rounded-md transition-colors"
-                data-testid="link-home"
-              >
-                AuthSystem
-              </a>
-            </Link>
+            <button
+              onClick={() => setLocation("/")}
+              className="text-xl font-semibold text-foreground hover-elevate active-elevate-2 px-3 py-2 rounded-md transition-colors"
+              data-testid="link-home"
+            >
+              AuthSystem
+            </button>
 
             {user && (
               <div className="hidden md:flex items-center gap-2">
-                <Link href="/profile">
-                  <a
+                <button
+                  onClick={() => setLocation("/profile")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover-elevate active-elevate-2 ${
+                    location === "/profile"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                  data-testid="link-profile"
+                >
+                  Profile
+                </button>
+
+                {user.role === "admin" && (
+                  <button
+                    onClick={() => setLocation("/admin")}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover-elevate active-elevate-2 ${
-                      location === "/profile"
+                      location === "/admin"
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground"
                     }`}
-                    data-testid="link-profile"
+                    data-testid="link-admin"
                   >
-                    Profile
-                  </a>
-                </Link>
-
-                {user.role === "admin" && (
-                  <Link href="/admin">
-                    <a
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors hover-elevate active-elevate-2 ${
-                        location === "/admin"
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground"
-                      }`}
-                      data-testid="link-admin"
-                    >
-                      Admin
-                    </a>
-                  </Link>
+                    Admin
+                  </button>
                 )}
               </div>
             )}
@@ -121,19 +118,15 @@ export default function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/profile">
-                    <DropdownMenuItem data-testid="menu-item-profile">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </DropdownMenuItem>
-                  </Link>
+                  <DropdownMenuItem onClick={() => setLocation("/profile")} data-testid="menu-item-profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
-                    <Link href="/admin">
-                      <DropdownMenuItem data-testid="menu-item-admin">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Admin Dashboard
-                      </DropdownMenuItem>
-                    </Link>
+                    <DropdownMenuItem onClick={() => setLocation("/admin")} data-testid="menu-item-admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
