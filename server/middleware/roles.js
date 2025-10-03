@@ -1,4 +1,4 @@
-const permit = (...roles) => {
+export const permit = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ 
@@ -17,5 +17,3 @@ const permit = (...roles) => {
     next();
   };
 };
-
-module.exports = permit;

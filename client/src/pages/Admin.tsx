@@ -15,9 +15,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Shield, Activity } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
+interface AdminUser {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface AdminData {
+  users: AdminUser[];
+  stats: {
+    totalUsers: number;
+    adminUsers: number;
+    regularUsers: number;
+  };
+}
+
 export default function Admin() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "admin")) {
@@ -25,7 +43,30 @@ export default function Admin() {
     }
   }, [user, isLoading, setLocation]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      fetchAdminData();
+    }
+  }, [user]);
+
+  const fetchAdminData = async () => {
+    try {
+      const response = await fetch('/api/admin', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAdminData(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch admin data', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  if (isLoading || dataLoading) {
     return (
       <>
         <Navbar />
@@ -48,42 +89,10 @@ export default function Admin() {
     return null;
   }
 
-  // todo: remove mock functionality - Replace with actual API data
-  const mockUsers = [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      role: "user",
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "user",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "admin",
-      status: "active",
-    },
-    {
-      id: "4",
-      name: "Bob Wilson",
-      email: "bob@example.com",
-      role: "user",
-      status: "inactive",
-    },
-  ];
-
-  const stats = {
-    totalUsers: mockUsers.length,
-    adminUsers: mockUsers.filter((u) => u.role === "admin").length,
-    activeUsers: mockUsers.filter((u) => u.status === "active").length,
+  const stats = adminData?.stats || {
+    totalUsers: 0,
+    adminUsers: 0,
+    regularUsers: 0,
   };
 
   return (
@@ -135,17 +144,17 @@ export default function Admin() {
 
             <Card className="shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                <CardTitle className="text-sm font-medium">Regular Users</CardTitle>
                 <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
                   <Activity className="h-4 w-4 text-primary" />
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" data-testid="text-active-users">
-                  {stats.activeUsers}
+                  {stats.regularUsers}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Currently active
+                  Standard access
                 </p>
               </CardContent>
             </Card>
@@ -159,50 +168,41 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockUsers.map((mockUser) => (
-                      <TableRow key={mockUser.id} data-testid={`row-user-${mockUser.id}`}>
-                        <TableCell className="font-medium">{mockUser.name}</TableCell>
-                        <TableCell>{mockUser.email}</TableCell>
-                        <TableCell>
-                          {mockUser.role === "admin" ? (
-                            <Badge variant="default" className="gap-1">
-                              <Shield className="h-3 w-3" />
-                              Admin
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">User</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              mockUser.status === "active" ? "default" : "secondary"
-                            }
-                            className={
-                              mockUser.status === "active"
-                                ? "bg-chart-2 hover:bg-chart-2/80"
-                                : ""
-                            }
-                          >
-                            {mockUser.status}
-                          </Badge>
-                        </TableCell>
+              {adminData?.users && adminData.users.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {adminData.users.map((adminUser) => (
+                        <TableRow key={adminUser._id} data-testid={`row-user-${adminUser._id}`}>
+                          <TableCell className="font-medium">{adminUser.name}</TableCell>
+                          <TableCell>{adminUser.email}</TableCell>
+                          <TableCell>
+                            {adminUser.role === "admin" ? (
+                              <Badge variant="default" className="gap-1">
+                                <Shield className="h-3 w-3" />
+                                Admin
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">User</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No users found
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

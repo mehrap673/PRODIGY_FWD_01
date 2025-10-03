@@ -1,7 +1,7 @@
-const express = require('express');
-const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
-const permit = require('../middleware/roles');
+import express from 'express';
+import User from '../models/User.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { permit } from '../middleware/roles.js';
 
 const router = express.Router();
 
@@ -42,4 +42,4 @@ router.get('/admin', authMiddleware, permit('admin'), async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

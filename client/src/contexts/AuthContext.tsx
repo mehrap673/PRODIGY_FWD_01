@@ -6,7 +6,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,62 +16,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // todo: remove mock functionality - Check auth status on mount
-    const checkAuth = async () => {
-      setIsLoading(true);
-      try {
-        // todo: remove mock functionality - Replace with actual API call to /api/auth/me
-        const storedUser = localStorage.getItem("mockUser");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Failed to check auth status", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     checkAuth();
   }, []);
 
+  const checkAuth = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Failed to check auth status", error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const login = async (email: string, password: string) => {
-    // todo: remove mock functionality - Replace with actual API call to /api/auth/login
-    console.log("Login triggered", { email, password });
-    
-    const mockUser: User = {
-      id: "1",
-      name: "John Doe",
-      email: email,
-      password: "",
-      role: email.includes("admin") ? "admin" : "user",
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("mockUser", JSON.stringify(mockUser));
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    setUser(data.user);
   };
 
   const register = async (name: string, email: string, password: string) => {
-    // todo: remove mock functionality - Replace with actual API call to /api/auth/register
-    console.log("Register triggered", { name, email, password });
-    
-    const mockUser: User = {
-      id: "1",
-      name: name,
-      email: email,
-      password: "",
-      role: "user",
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("mockUser", JSON.stringify(mockUser));
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+
+    setUser(data.user);
   };
 
-  const logout = () => {
-    // todo: remove mock functionality - Replace with actual API call to /api/auth/logout
-    console.log("Logout triggered");
+  const logout = async () => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
     setUser(null);
-    localStorage.removeItem("mockUser");
   };
 
   return (
